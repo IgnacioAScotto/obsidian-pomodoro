@@ -1,22 +1,24 @@
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import type { Api } from '../shared/api'
+import type { PhaseEnd, TimerState } from '../shared/timer'
 
-// Custom APIs for renderer
-const api = {}
-
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
-  }
-} else {
-  // @ts-ignore (define in dts)
-  window.electron = electronAPI
-  // @ts-ignore (define in dts)
-  window.api = api
+/** Escucha un canal del proceso principal y devuelve la función para dejar de escucharlo. */
+function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {
+  const listener = (_event: IpcRendererEvent, payload: T): void => callback(payload)
+  ipcRenderer.on(channel, listener)
+  return () => ipcRenderer.removeListener(channel, listener)
 }
+
+// Todo lo que la interfaz puede pedirle al proceso principal pasa por acá.
+const api: Api = {
+  timer: {
+    getState: () => ipcRenderer.invoke('timer:get-state'),
+    toggle: () => ipcRenderer.send('timer:toggle'),
+    skip: () => ipcRenderer.send('timer:skip'),
+    reset: () => ipcRenderer.send('timer:reset'),
+    onState: (callback) => subscribe<TimerState>('timer:state', callback),
+    onPhaseEnd: (callback) => subscribe<PhaseEnd>('timer:phase-end', callback)
+  }
+}
+
+contextBridge.exposeInMainWorld('api', api)

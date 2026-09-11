@@ -40,6 +40,8 @@ Requisitos: Linux, Node 20 o superior.
 ```bash
 npm install
 npm run dev         # abre la app en modo desarrollo
+npm run dev:rapido  # igual, pero con foco de 1 min y descansos de 15/30 s para probar
+npm test            # tests automáticos
 npm run typecheck   # chequeo de tipos
 npm run build:linux # genera AppImage y .deb en dist/
 ```
