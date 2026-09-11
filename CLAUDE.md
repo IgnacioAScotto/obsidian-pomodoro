@@ -4,6 +4,9 @@ App de escritorio (Electron) de **Nacho** (Ignacio A. Scotto), estudiante de inf
 UNAHUR. Es su **primera app hecha vibecodeando**: el código lo escribe el agente, Nacho prueba y
 opina. Explicale lo que hacés en criollo, sin dar por sentado que sabe Electron o React.
 
+> **Al arrancar cada sesión, leé [`PROGRESO.md`](PROGRESO.md)**: qué está hecho, qué decisiones se
+> tomaron y qué sigue. Actualizalo al terminar cada fase.
+
 ## Qué hace
 
 1. **Pomodoro**: foco / descanso corto / descanso largo, con materia y tema elegidos antes de arrancar.
@@ -55,7 +58,7 @@ leelo antes de cambiar el formato de algo que se escribe ahí).
 - Una rama por fase (`fase-1-timer`, `fase-2-registro`, …), commits chicos con mensaje en español,
   Pull Request con `gh` y merge a `main`. `main` siempre funciona.
 - Antes de commitear: `npm run typecheck` y `npm test` tienen que pasar.
-- El plan completo, con las fases, está en el README.
+- El estado de cada fase, los pendientes y el diseño de lo que falta están en `PROGRESO.md`.
 
 ## Comandos
 
