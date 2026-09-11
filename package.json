@@ -14,13 +14,14 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "start": "electron-vite preview --noSandbox",
     "dev": "electron-vite dev --noSandbox",
+    "dev:rapido": "POMODORO_RAPIDO=1 electron-vite dev --noSandbox",
+    "test": "vitest run",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0"
   },
   "devDependencies": {
@@ -42,7 +43,8 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "vitest": "^5.0.0"
   },
   "allowScripts": {
     "electron@39.8.10": true,
