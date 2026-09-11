@@ -32,6 +32,7 @@ const api: Api = {
     onPhaseEnd: (callback) => subscribe<PhaseEnd>('timer:phase-end', callback)
   },
   log: {
+    entries: () => ipcRenderer.invoke('log:entries'),
     onSaved: (callback) => subscribe<LogSaved>('log:saved', callback),
     onError: (callback) => subscribe<string>('log:error', callback)
   }
