@@ -8,6 +8,8 @@ App de escritorio para Linux que junta un **timer pomodoro** con tu **vault de O
   cuando las completás en la app, quedan marcadas en Obsidian.
 
 > Proyecto personal y primera app hecha vibecodeando con [Claude Code](https://claude.com/claude-code).
+> Todo el contexto del proyecto (objetivo, estado, arquitectura, reglas, lo que falta) está en
+> [`AGENTS.md`](AGENTS.md).
 
 ## Estado
 
