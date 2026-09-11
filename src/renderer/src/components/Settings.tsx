@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { AutostartState } from '../../../shared/api'
 import type { AppConfig, AppInfo } from '../../../shared/config'
 import type { TimerSettings } from '../../../shared/timer'
 
@@ -26,6 +27,17 @@ export default function Settings({
 }: Props): React.JSX.Element {
   const [timer, setTimer] = useState<TimerSettings>(config.timer)
   const [vaultError, setVaultError] = useState<string | null>(null)
+  const [autostart, setAutostart] = useState<AutostartState | null>(null)
+
+  useEffect(() => {
+    window.api.app.autostart.get().then(setAutostart)
+  }, [])
+
+  // Se aplica en el momento, sin esperar a "Guardar": es un archivo aparte, no la config del pomodoro.
+  const toggleAutostart = async (enabled: boolean): Promise<void> => {
+    const nowEnabled = await window.api.app.autostart.set(enabled)
+    setAutostart({ available: true, enabled: nowEnabled })
+  }
 
   const usingTestVault = info.testVaultPath !== null && config.vaultPath === info.testVaultPath
 
@@ -84,6 +96,20 @@ export default function Settings({
           </button>
         )}
       </div>
+
+      <h3>Inicio</h3>
+      {autostart?.available ? (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={autostart.enabled}
+            onChange={(event) => toggleAutostart(event.target.checked)}
+          />
+          Abrir al iniciar sesión (queda en el ícono de la barra, sin ventana)
+        </label>
+      ) : (
+        <p className="note">El arranque automático está disponible en la app instalada.</p>
+      )}
 
       <h3>Pomodoro</h3>
       {info.fastMode && (

@@ -416,6 +416,35 @@ select:focus {
   width: 100%;
 }
 
+/* ---------- Primer uso (sin vault) ---------- */
+
+.onboarding {
+  width: 100%;
+  max-width: 340px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.onboarding p {
+  margin: 0;
+}
+
+.onboarding code {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.onboarding .button-soft {
+  align-self: flex-start;
+  background: var(--bg);
+}
+
 /* ---------- Aviso flotante ---------- */
 
 .toast {
