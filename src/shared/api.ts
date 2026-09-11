@@ -4,6 +4,7 @@ import type {
   Catalog,
   ChooseVaultResult,
   ConfigPatch,
+  LogEntry,
   LogSaved
 } from './config'
 import type { PhaseEnd, TimerState } from './timer'
@@ -35,6 +36,8 @@ export interface Api {
     onPhaseEnd(callback: (end: PhaseEnd) => void): () => void
   }
   log: {
+    /** Todos los registros del vault elegido (vacío si no hay vault). */
+    entries(): Promise<LogEntry[]>
     onSaved(callback: (saved: LogSaved) => void): () => void
     onError(callback: (message: string) => void): () => void
   }

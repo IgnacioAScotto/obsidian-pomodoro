@@ -18,7 +18,7 @@ import { is, optimizer } from '@electron-toolkit/utils'
 import { loadConfig, mergeConfig, saveConfig } from './config'
 import { PomodoroTimer } from './timer'
 import { buildCatalog, isVault } from './vault/catalog'
-import { appendEntry } from './vault/log'
+import { appendEntry, readEntries } from './vault/log'
 import type {
   AppConfig,
   AppInfo,
@@ -309,6 +309,9 @@ ipcMain.handle('config:get', () => config)
 ipcMain.handle('config:update', (_event, patch: ConfigPatch) => updateConfig(patch))
 ipcMain.handle('vault:choose', () => chooseVault())
 ipcMain.handle('vault:catalog', () => buildCatalog(config.vaultPath))
+ipcMain.handle('log:entries', () =>
+  config.vaultPath && isVault(config.vaultPath) ? readEntries(config.vaultPath) : []
+)
 ipcMain.handle('timer:get-state', () => timer.getState())
 ipcMain.on('timer:toggle', () => timer.toggle())
 ipcMain.on('timer:skip', () => timer.skip())

@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AppConfig, AppInfo, Catalog, Selection } from '../../shared/config'
+import { formatTime } from '../../shared/timer'
 import Settings from './components/Settings'
+import Stats from './components/Stats'
 import SubjectPicker from './components/SubjectPicker'
 import Timer from './components/Timer'
 import { useTimerState } from './useTimerState'
+
+type View = 'timer' | 'stats' | 'settings'
 
 interface Toast {
   text: string
@@ -21,7 +25,7 @@ function App(): React.JSX.Element {
   const [config, setConfig] = useState<AppConfig | null>(null)
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [catalog, setCatalog] = useState<Catalog | null>(null)
-  const [view, setView] = useState<'timer' | 'settings'>('timer')
+  const [view, setView] = useState<View>('timer')
   const [toast, setToast] = useState<Toast | null>(null)
 
   const refreshCatalog = useCallback(() => {
@@ -67,6 +71,9 @@ function App(): React.JSX.Element {
     refreshCatalog()
   }
 
+  // Tocar el botón de la vista abierta vuelve al timer.
+  const toggleView = (next: View): void => setView(view === next ? 'timer' : next)
+
   // Mientras hay un foco en marcha no se cambia la materia: el tiempo es de lo que elegiste al arrancar.
   const focusInProgress = timerState.phase === 'focus' && timerState.status !== 'idle'
   const blockedReason =
@@ -82,23 +89,39 @@ function App(): React.JSX.Element {
             ? vaultLabel(config.vaultPath, info)
             : 'Sin vault: el tiempo no se guarda'}
         </span>
-        <button
-          className="icon-button"
-          onClick={() => setView(view === 'settings' ? 'timer' : 'settings')}
-          title="Ajustes"
-        >
-          ⚙
-        </button>
+        <div className="topbar-actions">
+          {view !== 'timer' && timerState.status !== 'idle' && (
+            <button className="mini-timer" onClick={() => setView('timer')} title="Volver al timer">
+              {formatTime(timerState.remainingMs)}
+            </button>
+          )}
+          <button
+            className={view === 'stats' ? 'icon-button active' : 'icon-button'}
+            onClick={() => toggleView('stats')}
+            title="Estadísticas"
+          >
+            📊
+          </button>
+          <button
+            className={view === 'settings' ? 'icon-button active' : 'icon-button'}
+            onClick={() => toggleView('settings')}
+            title="Ajustes"
+          >
+            ⚙
+          </button>
+        </div>
       </header>
 
-      {view === 'settings' ? (
+      {view === 'settings' && (
         <Settings
           config={config}
           info={info}
           onConfigChange={changeConfig}
           onClose={() => setView('timer')}
         />
-      ) : (
+      )}
+      {view === 'stats' && <Stats vaultOk={catalog.vaultOk} />}
+      {view === 'timer' && (
         <div className="main-view">
           {catalog.vaultOk && (
             <SubjectPicker
