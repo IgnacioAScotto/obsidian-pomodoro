@@ -16,7 +16,7 @@ Desde otra compu o desde claude.ai/code: el repo es `github.com/IgnacioAScotto/o
 
 ---
 
-## Estado al 2026-09-10
+## Estado al 2026-09-11
 
 | Fase | Qué quedó | PR |
 |---|---|---|
@@ -26,9 +26,9 @@ Desde otra compu o desde claude.ai/code: el repo es `github.com/IgnacioAScotto/o
 | 3 · Estadísticas | pantalla 📊 (semana/mes/año, filtro por ámbito, barras por materia, evolución) + tablero `Sistema/Tableros/Tiempo de estudio.md` en el vault | #3 ✅ |
 | 4 · Tareas (leer) | — | pendiente |
 | 5 · Tareas (completar) | — | pendiente |
-| 6 · Instalable | — | pendiente |
+| 6 · Instalable | `.deb` 0.3.0 (con perfil de AppArmor), lanzador de GNOME, bienvenida para elegir el vault, arranque automático opcional en ⚙ | #4 (falta que Nacho lo instale y lo pruebe) |
 
-Todo probado por Nacho y mergeado a `main`. 38 tests pasando (`npm test`).
+Fases 0–3 probadas por Nacho y mergeadas a `main`. 39 tests pasando (`npm test`).
 
 ### Pendientes chicos (fuera de las fases)
 
@@ -52,24 +52,26 @@ Todo probado por Nacho y mergeado a `main`. 38 tests pasando (`npm test`).
 
 ## Qué sigue
 
-### Recomendación: arrancar por la Fase 6 (instalable)
+### Fase 6 · Instalable (en PR #4, falta la prueba de Nacho)
 
-Es corta y hace que Nacho **use la app de verdad todos los días** (desde el lanzador, sin terminal,
-apuntando al vault real) mientras se desarrollan las tareas. Así el tablero junta datos reales.
-Después, Fases 4 y 5, y se reinstala el `.deb` cuando estén.
+- Construido y revisado: `dist/obsidian-pomodoro_0.3.0_amd64.deb` (~93 MB). Instala en
+  `/opt/Obsidian Pomodoro/`, el comando `obsidian-pomodoro`, el `.desktop` con `StartupWMClass=obsidian-pomodoro`
+  (coincide con `desktopName` del `package.json`) y el ícono. El post-install de electron-builder ajusta
+  `chrome-sandbox` e instala un perfil de AppArmor en `/etc/apparmor.d/obsidian-pomodoro` (Ubuntu 24.04+).
+- Solo `.deb`: la AppImage choca con AppArmor en Ubuntu 24.04+.
+- Instalar/actualizar: `npm run build:linux && sudo apt install ./dist/obsidian-pomodoro_*_amd64.deb`
+  (lo corre Nacho: pide contraseña). Desinstalar: `sudo apt remove obsidian-pomodoro`.
+- La app instalada usa `~/.config/Obsidian Pomodoro/` (dev usa `… (dev)`) y arranca **sin vault**: muestra
+  una bienvenida con el botón "Elegir vault…".
+- Arranque automático: casilla en ⚙ → *Inicio* (solo en la app instalada). Escribe
+  `~/.config/autostart/obsidian-pomodoro.desktop` con `--hidden`, que abre solo el ícono de la barra.
+- **A verificar con Nacho**: que en el dock aparezca el tomate y no una rueda genérica (si falla, revisar
+  el `app_id` de Wayland contra `StartupWMClass`), las notificaciones y el ícono de la barra.
 
-### Fase 6 · Instalable
+### Recomendación: después, Fase 4
 
-- `npm run build:linux` → `dist/` con `.deb` y AppImage (`electron-builder.yml` ya está: appId
-  `ar.scotto.obsidian-pomodoro`, productName `Obsidian Pomodoro`, categoría Education).
-- Recomendar el **`.deb`** (`sudo apt install ./dist/obsidian-pomodoro_<versión>_amd64.deb`): instala en
-  `/opt` con `chrome-sandbox` como root, así no hace falta `--no-sandbox`. La AppImage en Ubuntu 24.04+
-  choca con AppArmor (mismo problema del sandbox que en dev).
-- Revisar que el ícono aparezca en el dock de GNOME (puede hacer falta `desktopName` / `StartupWMClass`).
-- La app instalada usa **otra config** que la de desarrollo (`~/.config/Obsidian Pomodoro/` vs
-  `~/.config/Obsidian Pomodoro (dev)/`) y arranca **sin vault**: en el primer uso hay que elegirlo en ⚙.
-- Opcional: arranque automático con un `.desktop` en `~/.config/autostart/` (preguntar).
-- Subir la versión en `package.json` (hoy `0.1.0`).
+Con la app instalada y apuntando al vault real, el tablero junta datos reales mientras se hacen las
+tareas (Fases 4 y 5). Al terminar cada una: subir la versión y reinstalar el `.deb`.
 
 ### Fase 4 · Tareas (leer)
 
@@ -123,6 +125,7 @@ de cada materia · modo foco.
 src/main/index.ts          ventana, ícono en la barra, notificaciones, IPC, registro de focos
 src/main/timer.ts          PomodoroTimer (eventos `state` y `phase-end`)
 src/main/config.ts         config en JSON (userData/config.json)
+src/main/autostart.ts      arranque automático (~/.config/autostart), solo en la app instalada
 src/main/vault/log.ts      escribir y leer el registro mensual
 src/main/vault/catalog.ts  materias, conceptos, temas y áreas usadas
 src/shared/                tipos compartidos, interfaz `Api` (window.api), cuentas de estadísticas
@@ -142,8 +145,13 @@ test-vault/                vault falso
   app (Salir desde el ícono) y volver a abrirla. La interfaz sí se recarga sola.
 - **El ícono de la barra no puede mostrar texto en GNOME**: el tiempo restante está en su menú, en el
   título de la ventana y en el color del tomate.
-- **Para matar la app desde un script**: `pkill -f '[o]bsidian-pomodoro/node_modules/electron'`
-  (los corchetes evitan que `pkill -f` se mate a sí mismo).
+- **Para matar la app desde un script, cuidado con `pkill -f`**: mira la línea de comando completa de
+  cada proceso, así que si el patrón aparece en cualquier parte del comando que lo ejecuta (por ejemplo,
+  en la misma línea que lanzó la app), **mata a la propia terminal** (sale con código 144). Pasó dos veces.
+  - Dev: `pkill -f '[o]bsidian-pomodoro/node_modules/electron'`, en un comando **aparte** del que la lanzó.
+  - Empaquetada: por nombre de proceso, sin `-f`: `pkill obsidian-pomod` (el nombre se corta a 15 letras).
+- `~/.config/Obsidian Pomodoro/` tiene caché de Chromium de las primeras pruebas (Fase 1): es inofensiva,
+  no hay `config.json`.
 - **Cerrar la ventana no cierra la app**: sigue en el ícono de la barra. Salir = menú del ícono → Salir.
 
 ## Repos

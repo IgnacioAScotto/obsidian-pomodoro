@@ -1,8 +1,9 @@
 {
   "name": "obsidian-pomodoro",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Timer pomodoro que registra el tiempo de estudio y las tareas en un vault de Obsidian",
   "main": "./out/main/index.js",
+  "desktopName": "obsidian-pomodoro.desktop",
   "author": "Ignacio A. Scotto <scottoignacioagustin@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/IgnacioAScotto/obsidian-pomodoro",

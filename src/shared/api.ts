@@ -14,9 +14,20 @@ import type { PhaseEnd, TimerState } from './timer'
  * La implementación está en `src/preload/index.ts`.
  * Las funciones `on…` devuelven otra función para dejar de escuchar.
  */
+export interface AutostartState {
+  /** Solo en la app instalada. */
+  available: boolean
+  enabled: boolean
+}
+
 export interface Api {
   app: {
     info(): Promise<AppInfo>
+    autostart: {
+      get(): Promise<AutostartState>
+      /** Devuelve cómo quedó. */
+      set(enabled: boolean): Promise<boolean>
+    }
   }
   config: {
     get(): Promise<AppConfig>

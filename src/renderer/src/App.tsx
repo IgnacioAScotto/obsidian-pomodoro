@@ -71,6 +71,17 @@ function App(): React.JSX.Element {
     refreshCatalog()
   }
 
+  // Primer uso de la app instalada: todavía no hay vault elegido.
+  const chooseVault = async (): Promise<void> => {
+    const result = await window.api.vault.choose()
+    if (!result) return
+    if ('error' in result) {
+      setToast({ text: result.error, error: true })
+      return
+    }
+    changeConfig(await window.api.config.get())
+  }
+
   // Tocar el botón de la vista abierta vuelve al timer.
   const toggleView = (next: View): void => setView(view === next ? 'timer' : next)
 
@@ -123,13 +134,23 @@ function App(): React.JSX.Element {
       {view === 'stats' && <Stats vaultOk={catalog.vaultOk} />}
       {view === 'timer' && (
         <div className="main-view">
-          {catalog.vaultOk && (
+          {catalog.vaultOk ? (
             <SubjectPicker
               selection={config.selection}
               catalog={catalog}
               locked={focusInProgress}
               onChange={changeSelection}
             />
+          ) : (
+            <div className="onboarding">
+              <p>
+                Para guardar tu tiempo de estudio en Obsidian, elegí la carpeta de tu vault (la que
+                tiene la carpeta oculta <code>.obsidian</code>).
+              </p>
+              <button className="button-soft" onClick={chooseVault}>
+                Elegir vault…
+              </button>
+            </div>
           )}
           <Timer state={timerState} blockedReason={blockedReason} />
         </div>

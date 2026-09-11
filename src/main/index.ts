@@ -15,10 +15,12 @@ import { readFileSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
 import { is, optimizer } from '@electron-toolkit/utils'
+import { HIDDEN_FLAG, isAutostartEnabled, setAutostart } from './autostart'
 import { loadConfig, mergeConfig, saveConfig } from './config'
 import { PomodoroTimer } from './timer'
 import { buildCatalog, isVault } from './vault/catalog'
 import { appendEntry, readEntries } from './vault/log'
+import type { AutostartState } from '../shared/api'
 import type {
   AppConfig,
   AppInfo,
@@ -54,6 +56,8 @@ if (is.dev) app.setPath('userData', join(app.getPath('appData'), `${APP_NAME} (d
 
 const CONFIG_FILE = join(app.getPath('userData'), 'config.json')
 const FAST_MODE = Boolean(process.env['POMODORO_RAPIDO'])
+// Al iniciar sesión (arranque automático) la app abre solo el ícono de la barra.
+const START_HIDDEN = process.argv.includes(HIDDEN_FLAG)
 const TEST_VAULT = is.dev ? join(app.getAppPath(), 'test-vault') : null
 
 let config: AppConfig = loadConfig(CONFIG_FILE)
@@ -72,7 +76,8 @@ let lastNotification: Notification | null = null
 
 // ---------- Ventana ----------
 
-function createWindow(): void {
+/** `show = false` crea la ventana escondida: el timer y el sonido andan igual. */
+function createWindow(show = true): void {
   mainWindow = new BrowserWindow({
     width: 420,
     height: 700,
@@ -92,7 +97,9 @@ function createWindow(): void {
     }
   })
 
-  mainWindow.on('ready-to-show', () => mainWindow?.show())
+  mainWindow.on('ready-to-show', () => {
+    if (show) mainWindow?.show()
+  })
 
   // El título de la ventana lo maneja la app (muestra el tiempo), no el <title> del HTML.
   mainWindow.on('page-title-updated', (event) => event.preventDefault())
@@ -305,6 +312,19 @@ timer.on('phase-end', (end: PhaseEnd) => {
 })
 
 ipcMain.handle('app:info', (): AppInfo => ({ fastMode: FAST_MODE, testVaultPath: TEST_VAULT }))
+// El arranque automático solo tiene sentido en la app instalada (en desarrollo apuntaría a node_modules).
+ipcMain.handle(
+  'autostart:get',
+  (): AutostartState => ({
+    available: app.isPackaged,
+    enabled: app.isPackaged && isAutostartEnabled()
+  })
+)
+ipcMain.handle('autostart:set', (_event, enabled: boolean): boolean => {
+  if (!app.isPackaged) return false
+  setAutostart(enabled, process.execPath)
+  return isAutostartEnabled()
+})
 ipcMain.handle('config:get', () => config)
 ipcMain.handle('config:update', (_event, patch: ConfigPatch) => updateConfig(patch))
 ipcMain.handle('vault:choose', () => chooseVault())
@@ -330,7 +350,7 @@ if (!app.requestSingleInstanceLock()) {
     app.on('browser-window-created', (_, window) => optimizer.watchWindowShortcuts(window))
 
     createTray()
-    createWindow()
+    createWindow(!START_HIDDEN)
   })
 }
 

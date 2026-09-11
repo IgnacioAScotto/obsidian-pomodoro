@@ -13,7 +13,11 @@ function subscribe<T>(channel: string, callback: (payload: T) => void): () => vo
 // Todo lo que la interfaz puede pedirle al proceso principal pasa por acá.
 const api: Api = {
   app: {
-    info: () => ipcRenderer.invoke('app:info')
+    info: () => ipcRenderer.invoke('app:info'),
+    autostart: {
+      get: () => ipcRenderer.invoke('autostart:get'),
+      set: (enabled) => ipcRenderer.invoke('autostart:set', enabled)
+    }
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),

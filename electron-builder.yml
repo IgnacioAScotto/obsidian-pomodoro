@@ -5,24 +5,30 @@ directories:
 files:
   - '!**/.vscode/*'
   - '!src/*'
-  - '!test-vault/*'
-  - '!tests/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CLAUDE.md}'
+  - '!{test-vault,tests}{,/**}'
+  - '!{electron.vite,vitest}.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CLAUDE.md,PROGRESO.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
 linux:
+  # Solo .deb: instala en /opt con el sandbox de Chromium y un perfil de AppArmor,
+  # que es lo que Ubuntu 24.04+ necesita. La AppImage choca con AppArmor.
   target:
-    - AppImage
     - deb
   executableName: obsidian-pomodoro
+  icon: build/icon.png
   maintainer: Ignacio A. Scotto <scottoignacioagustin@gmail.com>
   category: Education
   synopsis: Pomodoro conectado a Obsidian
-appImage:
-  artifactName: ${name}-${version}.${ext}
+  description: Timer pomodoro que registra el tiempo de estudio en un vault de Obsidian.
+  desktop:
+    entry:
+      # Tiene que coincidir con "desktopName" del package.json para que GNOME
+      # asocie la ventana con el ícono del lanzador.
+      StartupWMClass: obsidian-pomodoro
+      Keywords: pomodoro;estudio;obsidian;timer;
 deb:
   artifactName: ${name}_${version}_${arch}.${ext}
 npmRebuild: false
