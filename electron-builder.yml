@@ -1,0 +1,28 @@
+appId: ar.scotto.obsidian-pomodoro
+productName: Obsidian Pomodoro
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!test-vault/*'
+  - '!tests/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CLAUDE.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+asarUnpack:
+  - resources/**
+linux:
+  target:
+    - AppImage
+    - deb
+  executableName: obsidian-pomodoro
+  maintainer: Ignacio A. Scotto <scottoignacioagustin@gmail.com>
+  category: Education
+  synopsis: Pomodoro conectado a Obsidian
+appImage:
+  artifactName: ${name}-${version}.${ext}
+deb:
+  artifactName: ${name}_${version}_${arch}.${ext}
+npmRebuild: false
