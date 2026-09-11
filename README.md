@@ -21,7 +21,7 @@ App de escritorio para Linux que junta un **timer pomodoro** con tu **vault de O
 | 3 · Estadísticas | gráficos por materia en la app y tablero en Obsidian | ✅ |
 | 4 · Tareas (leer) | lista de tareas del vault ordenadas por vencimiento | |
 | 5 · Tareas (completar) | marcar como hechas desde la app | |
-| 6 · Instalable | .deb, aparece en el lanzador, arranque automático opcional | ⏳ |
+| 6 · Instalable | .deb, aparece en el lanzador, arranque automático opcional | ✅ |
 
 ## Cómo se guarda el tiempo en el vault
 
