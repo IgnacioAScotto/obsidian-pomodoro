@@ -1,20 +1,32 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   Menu,
   nativeImage,
   Notification,
   shell,
   Tray,
-  type NativeImage
+  type NativeImage,
+  type OpenDialogOptions
 } from 'electron'
 import { readFileSync } from 'fs'
+import { homedir } from 'os'
 import { join } from 'path'
 import { is, optimizer } from '@electron-toolkit/utils'
+import { loadConfig, mergeConfig, saveConfig } from './config'
 import { PomodoroTimer } from './timer'
+import { buildCatalog, isVault } from './vault/catalog'
+import { appendEntry } from './vault/log'
+import type {
+  AppConfig,
+  AppInfo,
+  ChooseVaultResult,
+  ConfigPatch,
+  LogSaved
+} from '../shared/config'
 import {
-  DEFAULT_SETTINGS,
   FAST_SETTINGS,
   formatTime,
   PHASE_LABEL,
@@ -33,9 +45,22 @@ import trayLong from '../../resources/tray-long.png?asset'
 import trayLong2x from '../../resources/tray-long@2x.png?asset'
 
 const APP_NAME = 'Obsidian Pomodoro'
+/** Un foco cortado antes de tiempo se guarda solo si duró al menos esto. */
+const MIN_PARTIAL_MINUTES = 5
 
-const settings = process.env['POMODORO_RAPIDO'] ? FAST_SETTINGS : DEFAULT_SETTINGS
-const timer = new PomodoroTimer(settings)
+app.setName(APP_NAME)
+// En desarrollo la config va a otra carpeta, así las pruebas no pisan la de la app instalada.
+if (is.dev) app.setPath('userData', join(app.getPath('appData'), `${APP_NAME} (dev)`))
+
+const CONFIG_FILE = join(app.getPath('userData'), 'config.json')
+const FAST_MODE = Boolean(process.env['POMODORO_RAPIDO'])
+const TEST_VAULT = is.dev ? join(app.getAppPath(), 'test-vault') : null
+
+let config: AppConfig = loadConfig(CONFIG_FILE)
+// En desarrollo, si todavía no elegiste un vault, arrancamos con el de prueba.
+if (!config.vaultPath && TEST_VAULT) config = { ...config, vaultPath: TEST_VAULT }
+
+const timer = new PomodoroTimer(FAST_MODE ? FAST_SETTINGS : config.timer)
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -50,9 +75,9 @@ let lastNotification: Notification | null = null
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 420,
-    height: 600,
+    height: 700,
     minWidth: 360,
-    minHeight: 520,
+    minHeight: 620,
     show: false,
     title: APP_NAME,
     backgroundColor: '#1e1e2e',
@@ -110,12 +135,17 @@ function showWindow(): void {
   mainWindow.focus()
 }
 
+function sendToWindow(channel: string, payload: unknown): void {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload)
+}
+
 function updateWindowTitle(state: TimerState): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return
   const title =
     state.status === 'idle'
       ? APP_NAME
       : `${formatTime(state.remainingMs)} · ${PHASE_LABEL[state.phase]}`
-  mainWindow?.setTitle(title)
+  mainWindow.setTitle(title)
 }
 
 // ---------- Ícono en la barra ----------
@@ -145,7 +175,8 @@ function updateTray(state: TimerState): void {
 
   // En Linux el menú del ícono se reconstruye entero: lo hacemos como mucho una vez por minuto.
   const minutesLeft = Math.ceil(state.remainingMs / 60_000)
-  const key = `${state.phase}|${state.status}|${minutesLeft}`
+  const materia = config.selection.materia.trim()
+  const key = `${state.phase}|${state.status}|${minutesLeft}|${materia}`
   if (key === lastTrayKey) return
   lastTrayKey = key
 
@@ -165,6 +196,7 @@ function updateTray(state: TimerState): void {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: summary, enabled: false },
+      ...(materia ? [{ label: `Estudiando: ${materia}`, enabled: false }] : []),
       { type: 'separator' },
       { label: toggleLabel, click: () => timer.toggle() },
       { label: 'Saltar fase', click: () => timer.skip() },
@@ -193,7 +225,7 @@ function notify(title: string, body: string): void {
 function notifyPhaseEnd(end: PhaseEnd): void {
   const title = end.phase === 'focus' ? '¡Foco terminado! 🍅' : 'Se terminó el descanso'
   const nextMessage: Record<Phase, string> = {
-    focus: settings.autoStartFocus
+    focus: config.timer.autoStartFocus
       ? 'Arranca el próximo foco.'
       : 'Cuando quieras, arrancá el próximo foco.',
     shortBreak: 'Descanso corto: levantate, estirá, tomá agua.',
@@ -202,27 +234,87 @@ function notifyPhaseEnd(end: PhaseEnd): void {
   notify(title, nextMessage[end.next])
 }
 
+// ---------- Registro en el vault ----------
+
+/** Guarda en el vault un foco que terminó, o que se cortó después de los 5 minutos. */
+function recordFocus(end: PhaseEnd): void {
+  const minutos = Math.round(end.elapsedMs / 60_000)
+  if (minutos < 1 || (!end.completed && minutos < MIN_PARTIAL_MINUTES)) return
+
+  const { vaultPath, selection } = config
+  const materia = selection.materia.trim()
+  if (!vaultPath || !materia) return
+
+  try {
+    const file = appendEntry(vaultPath, {
+      startedAt: end.startedAt,
+      ambito: selection.ambito,
+      materia,
+      tema: selection.tema.trim(),
+      minutos
+    })
+    const saved: LogSaved = { materia, minutos, file }
+    sendToWindow('log:saved', saved)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    sendToWindow('log:error', message)
+    notify('No pude guardar el pomodoro en Obsidian', message)
+  }
+}
+
+// ---------- Config y vault ----------
+
+function updateConfig(patch: ConfigPatch): AppConfig {
+  config = mergeConfig(config, patch)
+  saveConfig(CONFIG_FILE, config)
+  if (patch.timer && !FAST_MODE) timer.updateSettings(config.timer)
+  updateTray(timer.getState())
+  return config
+}
+
+async function chooseVault(): Promise<ChooseVaultResult> {
+  const options: OpenDialogOptions = {
+    title: 'Elegí la carpeta de tu vault de Obsidian',
+    defaultPath: config.vaultPath ?? join(homedir(), 'Documents'),
+    properties: ['openDirectory']
+  }
+  const result = mainWindow
+    ? await dialog.showOpenDialog(mainWindow, options)
+    : await dialog.showOpenDialog(options)
+  const path = result.filePaths[0]
+  if (result.canceled || !path) return null
+  if (!isVault(path)) {
+    return { error: 'Esa carpeta no es un vault de Obsidian: no tiene la carpeta oculta .obsidian.' }
+  }
+  updateConfig({ vaultPath: path })
+  return { path }
+}
+
 // ---------- Timer ↔ interfaz ----------
 
 timer.on('state', (state: TimerState) => {
-  mainWindow?.webContents.send('timer:state', state)
+  sendToWindow('timer:state', state)
   updateTray(state)
   updateWindowTitle(state)
 })
 
 timer.on('phase-end', (end: PhaseEnd) => {
-  mainWindow?.webContents.send('timer:phase-end', end)
+  sendToWindow('timer:phase-end', end)
+  if (end.phase === 'focus') recordFocus(end)
   if (end.completed) notifyPhaseEnd(end)
 })
 
+ipcMain.handle('app:info', (): AppInfo => ({ fastMode: FAST_MODE, testVaultPath: TEST_VAULT }))
+ipcMain.handle('config:get', () => config)
+ipcMain.handle('config:update', (_event, patch: ConfigPatch) => updateConfig(patch))
+ipcMain.handle('vault:choose', () => chooseVault())
+ipcMain.handle('vault:catalog', () => buildCatalog(config.vaultPath))
 ipcMain.handle('timer:get-state', () => timer.getState())
 ipcMain.on('timer:toggle', () => timer.toggle())
 ipcMain.on('timer:skip', () => timer.skip())
 ipcMain.on('timer:reset', () => timer.reset())
 
 // ---------- Ciclo de vida ----------
-
-app.setName(APP_NAME)
 
 // Una sola instancia: si la abrís de nuevo, se muestra la que ya está corriendo.
 if (!app.requestSingleInstanceLock()) {
@@ -241,6 +333,9 @@ if (!app.requestSingleInstanceLock()) {
 
 app.on('before-quit', () => {
   quitting = true
+  // Si cerrás la app en medio de un foco, se guarda lo que llevabas (si pasó los 5 minutos).
+  const state = timer.getState()
+  if (state.phase === 'focus' && state.status !== 'idle') timer.reset()
 })
 
 // Sin ícono en la barra no habría forma de volver a la app, así que en ese caso sí se cierra.

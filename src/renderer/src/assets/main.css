@@ -33,9 +33,55 @@ body {
 .app {
   height: 100%;
   display: flex;
+  flex-direction: column;
+  padding: 14px 24px 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.vault-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-status::before {
+  content: '●';
+  margin-right: 6px;
+  color: #f9e2af;
+}
+
+.vault-status.ok::before {
+  color: var(--short-break);
+}
+
+.icon-button {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: none;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.icon-button:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.main-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  gap: 24px;
 }
 
 /* ---------- Timer ---------- */
@@ -66,8 +112,8 @@ body {
 
 .ring {
   position: relative;
-  width: 260px;
-  height: 260px;
+  width: 220px;
+  height: 220px;
 }
 
 .ring svg {
@@ -99,7 +145,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
+  font-size: 50px;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
 }
@@ -172,4 +218,209 @@ button:focus-visible {
   margin: 0;
   font-size: 12px;
   color: var(--muted);
+}
+
+.hint.warning {
+  color: #f9e2af;
+}
+
+.primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* ---------- Formularios ---------- */
+
+input,
+select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---------- Qué estudiás ---------- */
+
+.picker {
+  width: 100%;
+  max-width: 340px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.picker legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.picker:disabled {
+  opacity: 0.6;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.segmented button {
+  padding: 6px;
+  border-radius: 8px;
+  background: none;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.segmented button.active {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---------- Aviso flotante ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  max-width: 90%;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 35%);
+  font-size: 13px;
+}
+
+.toast.error {
+  background: var(--focus);
+  color: var(--bg);
+}
+
+/* ---------- Ajustes ---------- */
+
+.settings {
+  flex: 1;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.settings header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.settings h3 {
+  margin: 12px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.path {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  word-break: break-all;
+  user-select: text;
+}
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.note.error {
+  color: var(--focus);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.button-soft {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.button-soft:hover {
+  background: var(--surface-hover);
+}
+
+.link {
+  padding: 4px 0;
+  background: none;
+  font-size: 13px;
+  color: var(--long-break);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.check input {
+  width: auto;
+}
+
+.settings .primary {
+  align-self: flex-start;
+  margin-top: 12px;
 }

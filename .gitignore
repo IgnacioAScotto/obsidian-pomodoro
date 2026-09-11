@@ -4,3 +4,8 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Lo que genera usar el vault de prueba (desde la app o abriéndolo en Obsidian)
+test-vault/Sistema/Pomodoro/
+test-vault/.obsidian/*
+!test-vault/.obsidian/app.json

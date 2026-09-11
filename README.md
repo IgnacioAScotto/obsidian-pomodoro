@@ -14,8 +14,8 @@ App de escritorio para Linux que junta un **timer pomodoro** con tu **vault de O
 | Fase | Qué incluye | Estado |
 |---|---|---|
 | 0 · Preparación | repo, estructura, documentación | ✅ |
-| 1 · Timer | pomodoro 25/5/15, notificaciones, icono en la barra | ⏳ |
-| 2 · Registro | escribir cada bloque de foco en el vault | |
+| 1 · Timer | pomodoro 25/5/15, notificaciones, icono en la barra | ✅ |
+| 2 · Registro | escribir cada bloque de foco en el vault | ⏳ |
 | 3 · Estadísticas | gráficos por materia en la app y tablero en Obsidian | |
 | 4 · Tareas (leer) | lista de tareas del vault ordenadas por vencimiento | |
 | 5 · Tareas (completar) | marcar como hechas desde la app | |

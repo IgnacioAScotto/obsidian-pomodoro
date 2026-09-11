@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { formatTime, PHASE_LABEL, type TimerState } from '../../../shared/timer'
-import { playChime } from '../sound'
 
 const RADIUS = 120
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
@@ -12,33 +11,33 @@ function focusDotsDone(state: TimerState): number {
   return cycleJustEnded ? state.longBreakEvery : inCycle
 }
 
-export default function Timer(): React.JSX.Element {
-  const [state, setState] = useState<TimerState | null>(null)
+/** Si estás escribiendo en un campo, la barra espaciadora escribe un espacio y no toca el timer. */
+function isTyping(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || target.matches('input, textarea, select'))
+  )
+}
 
-  useEffect(() => {
-    window.api.timer.getState().then(setState)
-    const offState = window.api.timer.onState(setState)
-    const offEnd = window.api.timer.onPhaseEnd((end) => {
-      if (end.completed) playChime()
-    })
-    return () => {
-      offState()
-      offEnd()
-    }
-  }, [])
+interface Props {
+  state: TimerState
+  /** Si no es `null`, no se puede arrancar un foco y se muestra este motivo. */
+  blockedReason: string | null
+}
+
+export default function Timer({ state, blockedReason }: Props): React.JSX.Element {
+  const startBlocked = blockedReason !== null && state.phase === 'focus' && state.status === 'idle'
 
   // Barra espaciadora: iniciar / pausar.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.code !== 'Space' || event.repeat) return
+      if (event.code !== 'Space' || event.repeat || isTyping(event.target)) return
       event.preventDefault()
-      window.api.timer.toggle()
+      if (!startBlocked) window.api.timer.toggle()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
-
-  if (!state) return <section className="timer" />
+  }, [startBlocked])
 
   const progress = state.durationMs > 0 ? 1 - state.remainingMs / state.durationMs : 0
   const dotsDone = focusDotsDone(state)
@@ -87,7 +86,11 @@ export default function Timer(): React.JSX.Element {
         >
           ↺
         </button>
-        <button className="primary" onClick={clickThen(window.api.timer.toggle)}>
+        <button
+          className="primary"
+          onClick={clickThen(window.api.timer.toggle)}
+          disabled={startBlocked}
+        >
           {mainLabel}
         </button>
         <button
@@ -99,7 +102,9 @@ export default function Timer(): React.JSX.Element {
         </button>
       </div>
 
-      <p className="hint">Espacio para iniciar o pausar</p>
+      <p className={startBlocked ? 'hint warning' : 'hint'}>
+        {startBlocked ? blockedReason : 'Espacio para iniciar o pausar'}
+      </p>
     </section>
   )
 }

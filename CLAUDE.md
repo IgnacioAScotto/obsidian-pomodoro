@@ -16,9 +16,12 @@ opina. Explicale lo que hacés en criollo, sin dar por sentado que sabe Electron
 Electron + electron-vite + React + TypeScript. Vitest para tests. electron-builder para empaquetar.
 
 ```
-src/main/        proceso principal: ventana, bandeja, timer, acceso al disco (vault)
+src/main/        proceso principal: ventana, bandeja, timer, config, acceso al disco
+src/main/vault/  todo lo que lee o escribe el vault (registro, catálogo de materias)
 src/preload/     puente seguro entre main y la interfaz (window.api)
 src/renderer/    interfaz React
+src/shared/      tipos compartidos entre main y la interfaz (incluye la interfaz Api)
+tests/           Vitest; los tests del vault escriben en una copia temporal de test-vault/
 test-vault/      vault falso para desarrollar y testear sin tocar el real
 ```
 
